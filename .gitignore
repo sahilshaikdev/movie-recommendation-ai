@@ -1,0 +1,30 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Models/Embeddings (large files)
+models/*.pkl
+models/*.npy
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Ngrok
+ngrok.yml
+
+# Streamlit
+.streamlit/
+
+# Logs
+*.log

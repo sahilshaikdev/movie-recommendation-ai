@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎬📚 Movie & Book Assistant</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        .search-section {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .search-section input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 1.1rem;
+        }
+        .search-section input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        .search-section button {
+            padding: 1rem 2rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+        .search-section button:hover {
+            background: #5a67d8;
+        }
+        .results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .category {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+        .category h2 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        .item {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-left: 5px solid #667eea;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+        }
+        .item.book { border-left-color: #e53e3e; }
+        .item.book:hover { box-shadow: 0 4px 16px rgba(229, 62, 62, 0.2); }
+        .item-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .movie-img {
+    width: 50px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+            
+        }
+        .content { flex: 1; }
+        .meta { font-size: 0.9rem; color: #666; }
+        .score {
+            display: inline-block;
+            background: #48bb78;
+            color: white;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        .score.book-score { background: #ed8936; }
+        .loading { text-align: center; padding: 2rem; color: #666; }
+        .error { color: #e53e3e; text-align: center; padding: 1rem; }
+        @media (max-width: 768px) { .results { grid-template-columns: 1fr; } }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #999;
+        }
+        .modal-close:hover { color: #333; }
+        .modal .badge {
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: white;
+            margin-top: 0.5rem;
+        }
+        .badge.movie-badge { background: #667eea; }
+        .badge.book-badge { background: #e53e3e; }
+        .modal .description {
+            margin: 1rem 0;
+            line-height: 1.6;
+            color: #444;
+        }
+        .modal .details {
+            color: #666;
+            font-size: 0.95rem;
+        }
+        .modal .details strong { color: #333; }
+        .modal-image {
+    max-width: 120px;
+    max-height: 160px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+
+        }
+        .modal-row {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .modal-info { flex: 1; }
+        @media (max-width: 500px) {
+            .modal-row { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬📚 Movie & Book Assistant</h1>
+        <p class="subtitle">Your AI-powered recommendation assistant for movies and books</p>
+        <div class="search-section">
+            <input type="text" id="queryInput" placeholder="e.g., I want a thrilling mystery book" />
+            <button id="searchBtn">🔍 Search</button>
+        </div>
+        <div id="resultsContainer">
+            <div class="loading">Enter a query and click Search!</div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" id="modalClose">&times;</span>
+            <div class="modal-row">
+                <div id="modalImageContainer"></div>
+                <div class="modal-info">
+                    <h2 id="modalTitle">Title</h2>
+                    <span id="modalBadge" class="badge">Type</span>
+                </div>
+            </div>
+            <div class="description" id="modalDescription">Description</div>
+            <div class="details" id="modalDetails"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let moviesData = [];
+        let booksData = [];
+
+        document.getElementById('searchBtn').addEventListener('click', search);
+        document.getElementById('queryInput').addEventListener('keypress', e => { if (e.key === 'Enter') search(); });
+
+        const modal = document.getElementById('detailModal');
+        document.getElementById('modalClose').addEventListener('click', () => modal.classList.remove('active'));
+        window.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+
+        async function search() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                document.getElementById('resultsContainer').innerHTML = '<div class="error">Please enter a query.</div>';
+                return;
+            }
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = '<div class="loading">⏳ Searching...</div>';
+            try {
+                const url = `${API_BASE}/search?query=${encodeURIComponent(query)}&top_n=5`;
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.error) {
+                    container.innerHTML = `<div class="error">❌ ${data.error}</div>`;
+                    return;
+                }
+                moviesData = data.movies || [];
+                booksData = data.books || [];
+                renderResults(data);
+            } catch (err) {
+                container.innerHTML = `<div class="error">❌ Failed to connect. Make sure Flask is running on port 5000.</div>`;
+                console.error(err);
+            }
+        }
+
+        function renderResults(data) {
+            const container = document.getElementById('resultsContainer');
+            let html = '<div class="results">';
+
+            // Movies
+            html += `<div class="category"><h2>🎬 Movies</h2>`;
+            if (data.movies && data.movies.length > 0) {
+                data.movies.forEach((m, index) => {
+                    html += `
+                        <div class="item" onclick="openMovieDetail(${index})">
+                            <div class="item-row">
+                                ${m.image_url ? `<img src="${m.image_url}" alt="${m.title}" class="movie-img" onerror="this.style.display='none'">` : ''}
+                                <div class="content">
+                                    <h4>${m.title}</h4>
+                                    <div class="meta">Genres: ${m.genres}</div>
+                                    <span class="score">Match: ${m.similarity_score}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += `<p style="color:#999;">No movies found.</p>`;
+            }
+            html += `</div>`;
+
+            // Books
+            html += `<div class="category"><h2>📚 Books</h2>`;
+            if (data.books && data.books.length > 0) {
+                data.books.forEach((b, index) => {
+                    html += `
+                        <div class="item book" onclick="openBookDetail(${index})">
+                            <div class="item-row">
+                                ${b.image_url ? `<img src="${b.image_url}" alt="${b.title}" class="movie-img" onerror="this.style.display='none'">` : ''}
+                                <div class="content">
+                                    <h4>${b.title}</h4>
+                                    <div class="meta">by ${b.author} · ${b.genres}</div>
+                                    <div class="meta">${b.description ? b.description.substring(0, 80) : ''}...</div>
+                                    <span class="score book-score">Match: ${b.similarity_score}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += `<p style="color:#999;">No books found.</p>`;
+            }
+            html += `</div>`;
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function openMovieDetail(index) {
+            const movie = moviesData[index];
+            if (!movie) return;
+            document.getElementById('modalTitle').textContent = movie.title;
+            document.getElementById('modalBadge').textContent = '🎬 Movie';
+            document.getElementById('modalBadge').className = 'badge movie-badge';
+            document.getElementById('modalImageContainer').innerHTML = movie.image_url ? 
+                `<img src="${movie.image_url}" alt="${movie.title}" class="modal-image" onerror="this.style.display='none'">` : '';
+            document.getElementById('modalDescription').textContent = movie.description || 'No description available.';
+            document.getElementById('modalDetails').innerHTML = `
+                <strong>Genres:</strong> ${movie.genres}<br>
+                <strong>Match Score:</strong> ${movie.similarity_score}%<br>
+                <strong>Type:</strong> Movie
+            `;
+            modal.classList.add('active');
+        }
+
+        function openBookDetail(index) {
+            const book = booksData[index];
+            if (!book) return;
+            document.getElementById('modalTitle').textContent = book.title;
+            document.getElementById('modalBadge').textContent = '📚 Book';
+            document.getElementById('modalBadge').className = 'badge book-badge';
+            document.getElementById('modalImageContainer').innerHTML = book.image_url ? 
+                `<img src="${book.image_url}" alt="${book.title}" class="modal-image" onerror="this.style.display='none'">` : '';
+            document.getElementById('modalDescription').textContent = book.description || 'No description available.';
+            document.getElementById('modalDetails').innerHTML = `
+                <strong>Author:</strong> ${book.author}<br>
+                <strong>Genres:</strong> ${book.genres}<br>
+                <strong>Match Score:</strong> ${book.similarity_score}%<br>
+                <strong>Type:</strong> Book
+            `;
+            modal.classList.add('active');
+        }
+    </script>
+</body>
+</html>
